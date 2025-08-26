@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ゲーム集</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: #e0f7fa;
+      font-family: sans-serif;
+    }
+    h1 {
+      text-align: center;
+      color: #00796b;
+    }
+    .game-list {
+      display: flex;
+      flex-wrap: wrap;       /* 複数行に並べる */
+      justify-content: center;
+      gap: 30px;             /* ゲーム同士の間隔 */
+      margin-top: 30px;
+    }
+    .game {
+      text-align: center;
+      width: 150px;          /* 1つのゲームブロックの幅 */
+      cursor: pointer;
+    }
+    .game img {
+      width: 100%;           /* ブロック幅に合わせる */
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transition: transform 0.2s;
+    }
+    .game img:hover {
+      transform: scale(1.05); /* ちょっと拡大 */
+    }
+    .game-name {
+      margin-top: 8px;
+      font-weight: bold;
+      color: #00796b;
+    }
+  </style>
+</head>
+<body>
+  <h1>ゲーム集</h1>
+  <div class="game-list">
+    
+    <!-- ゲーム1 -->
+<a href="https://gozaku-5390.github.io/TheSimple-BuildingBlocks/" class="game" target="_blank">
+  <img src="icon-512.png" alt="TheSimple-BuildingBlocks">
+  <div class="TheSimple-BuildingBlocks">ゲーム1</div>
+</a>
+
+    <!-- ゲーム2 -->
+    <a href="game2.html" class="game">
+      <img src="game2.png" alt="ゲーム2タイトル画像">
+      <div class="game-name">ゲーム2</div>
+    </a>
+
+    <!-- ゲーム3 -->
+    <a href="game3.html" class="game">
+      <img src="game3.png" alt="ゲーム3タイトル画像">
+      <div class="game-name">ゲーム3</div>
+    </a>
+
+    <!-- ここにどんどん追加 -->
+  </div>
+</body>
+</html>
