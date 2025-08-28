@@ -12,10 +12,19 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      font-size: 22px; /* ページ全体の文字を大きく */
+      line-height: 1.6; /* 行間も少し広く */
     }
     h1 {
       margin-bottom: 50px;
       text-align: center;
+    }
+    pre {
+      font-size: 26px; /* さらに大きく */
+      line-height: 1.6;
+      text-align: left; /* 左揃え */
+      margin-bottom: 30px;
+      white-space: pre-wrap; /* 長い行は折り返す */
     }
     .section {
       text-align: center;
@@ -25,7 +34,7 @@
       color: #007bff;
       text-decoration: none;
       font-weight: bold;
-      font-size: 18px;
+      font-size: 1em; /* bodyの文字サイズに合わせる */
       display: inline-block;
       margin-top: 10px;
       transition: 0.3s;
@@ -43,7 +52,8 @@
 とりあえず作っただけです。
 名前だけ覚えて、いや、
 できればゲームも遊んで帰ってね。
-  <pre>
+  </pre>
+
   <div class="section">
     <p>プロフィールはこちら↓</p>
     <a href="profile.html">プロフィール</a>
@@ -55,4 +65,3 @@
   </div>
 </body>
 </html>
-
