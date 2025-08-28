@@ -15,12 +15,13 @@
       color: #00796b;
     }
     .game-list {
-      display: flex;
-      flex-wrap: wrap;       /* 複数行に並べる */
-      justify-content: center;
-      gap: 30px;             /* ゲーム同士の間隔 */
-      margin-top: 30px;
-    }
+  display: flex;
+  flex-direction: column; /* 縦方向に並べる */
+  align-items: center;    /* 中央寄せ */
+  gap: 30px;              /* ゲーム同士の間隔 */
+  margin-top: 30px;
+}
+
     .game {
       text-align: center;
       width: 150px;          /* 1つのゲームブロックの幅 */
@@ -68,6 +69,7 @@
   </div>
 </body>
 </html>
+
 
 
 
