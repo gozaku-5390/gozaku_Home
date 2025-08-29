@@ -1,292 +1,70 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>スマホ無限ラン（コイン5個セット・クールダウン付き）</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<style>
-  body { margin:0; overflow:hidden; background:#87ceeb; font-family:sans-serif; }
-  canvas { display:block; margin:auto; background:#87ceeb; }
-  #loading { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; }
-  #bar { width:200px; height:20px; border:1px solid #000; margin-bottom:5px; }
-  #barFill { width:0%; height:100%; background:green; }
-  #startBtn { display:none; padding:5px 20px; font-size:16px; cursor:pointer; }
-  #gameOverScreen {
-    position:absolute;
-    top:50%; left:50%;
-    transform:translate(-50%,-50%);
-    background:white;
-    padding:20px 40px;
-    border-radius:15px;
-    text-align:center;
-    display:none;
-    box-shadow:0 4px 10px rgba(0,0,0,0.3);
-  }
-  #gameOverScreen h1 { margin:0 0 10px 0; font-size:24px; white-space: pre-line; }
-  #gameOverScreen p { margin:0; font-size:18px; white-space: pre-line; }
-  #retryBtn { margin-top:10px; padding:5px 20px; font-size:16px; cursor:pointer; }
-</style>
+  <meta charset="UTF-8">
+  <title>茣蓙九丸のホームページ</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 40px 20px;
+      font-family: sans-serif;
+      background-color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 48px; /* ページ全体の文字を大きく */
+      line-height: 1.6; /* 行間も少し広く */
+    }
+    h1 {
+      margin-bottom: 36px;
+      text-align: center;
+    }
+    pre {
+      font-size: 50px; /* さらに大きく */
+      line-height: 1.6;
+      text-align: left; /* 左揃え */
+      margin-bottom: 30px;
+      white-space: pre-wrap; /* 長い行は折り返す */
+    }
+    .section {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .section a {
+      color: #007bff;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 1em; /* bodyの文字サイズに合わせる */
+      display: inline-block;
+      margin-top: 10px;
+      transition: 0.3s;
+    }
+    .section a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
-<canvas id="gameCanvas" width="512" height="128"></canvas>
+  <h1>こんにちは。ここは茣蓙九丸のホームページです。</h1>
+  
+  <pre>
+…こんなサイト誰が見るんだよ
+とりあえず作っただけです。
+名前だけ覚えて、いや、
+できればゲームも遊んで帰ってね。
+  </pre>
 
-<div id="loading">
-  <div id="bar"><div id="barFill"></div></div>
-  <p id="loadingText">読み込み中: 0%</p>
-  <button id="startBtn">OK?</button>
-</div>
+  <div class="section">
+    <p>プロフィールはこちら↓</p>
+    <a href="profile.html">プロフィール</a>
+  </div>
 
-<div id="gameOverScreen">
-  <h1>Game Over</h1>
-  <p id="finalScore">Score: 0</p>
-  <button id="retryBtn">Retry</button>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-import { getDatabase, ref, push, query, orderByChild, get, startAt } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDJeyWJrpSdjUGbO-Hq5EwRpz2adPuioK0",
-  authDomain: "run-14dc4.firebaseapp.com",
-  databaseURL: "https://run-14dc4-default-rtdb.firebaseio.com",
-  projectId: "run-14dc4",
-  storageBucket: "run-14dc4.firebasestorage.app",
-  messagingSenderId: "905839781380",
-  appId: "1:905839781380:web:1222f2d826fd7d43d9f751",
-  measurementId: "G-BT165ZQ7E4"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-</script>
-
-<script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-
-const BASE_WIDTH = 512;
-const BASE_HEIGHT = 128;
-const TILE_WIDTH = 64;
-const TILE_HEIGHT = 12;
-
-let scale = 1;
-
-let player = { x:50, y:BASE_HEIGHT - TILE_HEIGHT - 16, width:12, height:16, vy:0, onGround:true };
-let tiles = [];
-const SCROLL_SPEED_BASE = 3;
-let SCROLL_SPEED = SCROLL_SPEED_BASE;
-let score = 0;
-let plainGroundCount = 0;
-let coinCooldown = 0;
-
-const imgGround = new Image(); imgGround.src='ground.png';
-const imgPlatform = new Image(); imgPlatform.src='platform.png';
-const imgCoin = new Image(); imgCoin.src='coin.png';
-let images = [imgGround,imgPlatform,imgCoin];
-let loadedCount = 0;
-
-images.forEach(img => {
-    img.onload = () => {
-        loadedCount++;
-        document.getElementById('barFill').style.width = (loadedCount/images.length*100) + '%';
-        document.getElementById('loadingText').innerText = '読み込み中: ' + Math.floor(loadedCount/images.length*100) + '%';
-        if(loadedCount === images.length){
-            document.getElementById('startBtn').style.display = 'inline-block';
-        }
-    }
-});
-
-function checkOrientation(){
-    if(window.innerHeight > window.innerWidth){
-        document.getElementById('loadingText').innerText = '横画面にしてください';
-        document.getElementById('startBtn').style.display = 'none';
-        return false;
-    }
-    if(loadedCount === images.length){
-        document.getElementById('startBtn').style.display = 'inline-block';
-    }
-    return true;
-}
-
-window.addEventListener('load', checkOrientation);
-window.addEventListener('resize', () => {
-    resizeCanvas();
-    checkOrientation();
-});
-
-document.getElementById('startBtn').addEventListener('click', () => {
-    if(!checkOrientation()) return;
-    document.getElementById('loading').style.display = 'none';
-    initTiles();
-});
-
-document.getElementById('retryBtn').addEventListener('click', ()=> {
-    document.getElementById('gameOverScreen').style.display = 'none';
-    resetGame();
-});
-
-function resetGame(){
-    tiles = [];
-    score = 0;
-    player.x = 50;
-    player.y = BASE_HEIGHT - TILE_HEIGHT - 16;
-    player.vy = 0;
-    player.onGround = true;
-    plainGroundCount = 0;
-    coinCooldown = 0;
-    initTiles();
-}
-
-function initTiles(){
-    const tilesNum = Math.ceil(BASE_WIDTH / TILE_WIDTH) + 1;
-    let i = 0;
-    while(i < tilesNum){
-        let hole = (i>=5 && Math.random() < 0.3);
-        if(!hole) plainGroundCount++;
-        else plainGroundCount=0;
-        const tile = {x:i*TILE_WIDTH, hole:hole, platform:null, coins:[]};
-        generateCoinSet(tile);
-        tiles.push(tile);
-        i++;
-    }
-
-    canvas.addEventListener('touchstart', e => {
-        if(player.onGround){
-            player.vy = -3.5;
-            player.onGround = false;
-        }
-        e.preventDefault();
-    }, {passive:false});
-
-    resizeCanvas();
-    update();
-}
-
-function resizeCanvas(){
-    const scaleX = window.innerWidth / BASE_WIDTH;
-    const scaleY = window.innerHeight / BASE_HEIGHT;
-    scale = Math.max(scaleX, scaleY);
-    canvas.style.width = BASE_WIDTH * scale + 'px';
-    canvas.style.height = BASE_HEIGHT * scale + 'px';
-    SCROLL_SPEED = SCROLL_SPEED_BASE * scale;
-}
-
-function generateCoinSet(tile){
-    tile.coins = [];
-    if(coinCooldown>0){ coinCooldown--; return; }
-    if(Math.random()<0.5){
-        for(let i=0;i<5;i++){
-            tile.coins.push({x:tile.x+i*12+4, y: tile.hole ? BASE_HEIGHT - TILE_HEIGHT - 55 - 16 + 43 : BASE_HEIGHT - TILE_HEIGHT - 16, width:8, height:8});
-        }
-        coinCooldown = 2;
-    }
-}
-
-function drawTile(tile, nextTile){
-    if(!tile.hole){
-        ctx.drawImage(imgGround, tile.x, BASE_HEIGHT - TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT);
-        tile.platform=null;
-    } else {
-        if(nextTile && nextTile.hole){
-            const platWidth=64, platHeight=55;
-            const platX = tile.x + TILE_WIDTH/2 - platWidth/2 + TILE_WIDTH/2;
-            const platY = BASE_HEIGHT - TILE_HEIGHT - platHeight + 43;
-            ctx.drawImage(imgPlatform, platX, platY, platWidth, platHeight);
-            tile.platform={x:platX, y:platY, width:platWidth, height:platHeight};
-        } else tile.platform=null;
-    }
-    tile.coins.forEach(c=>ctx.drawImage(imgCoin,c.x,c.y,c.width,c.height));
-}
-
-// --- ゲームオーバー表示（自分のスコア & 今日の世界記録） ---
-async function showGameOver(){
-    const finalScore = Math.floor(score);
-
-    try{
-        const scoresRef = firebase.database().ref('scores');
-        await push(scoresRef, { score: finalScore, timestamp: Date.now() });
-
-        const today = new Date(); today.setHours(0,0,0,0);
-        const startOfToday = today.getTime();
-
-        const topQuery = query(scoresRef, orderByChild('timestamp'), startAt(startOfToday));
-        const snapshot = await get(topQuery);
-
-        let topScore = finalScore;
-        snapshot.forEach(child=>{
-            const s = child.val().score;
-            if(s>topScore) topScore=s;
-        });
-
-        document.getElementById('finalScore').innerText = 'Score: ' + finalScore;
-        document.querySelector('#gameOverScreen h1').innerText = 'Game Over\n今日の世界記録: ' + topScore;
-        document.getElementById('gameOverScreen').style.display = 'block';
-
-    } catch(err){
-        console.error(err);
-        document.getElementById('gameOverScreen').style.display = 'block';
-    }
-}
-
-// --- ゲームループ ---
-function update(){
-    ctx.clearRect(0,0,BASE_WIDTH,BASE_HEIGHT);
-
-    for(let i=0;i<tiles.length;i++){
-        const tile = tiles[i];
-        tile.x -= SCROLL_SPEED/scale;
-        tile.coins.forEach(c=>c.x -= SCROLL_SPEED/scale);
-        const nextTile = (i<tiles.length-1)?tiles[i+1]:null;
-        drawTile(tile,nextTile);
-    }
-
-    if(tiles[0].x + TILE_WIDTH < 0){
-        let old = tiles.shift();
-        const lastX = tiles[tiles.length-1].x + TILE_WIDTH;
-        let hole = (plainGroundCount>=5) ? true : Math.random()<0.3;
-        if(hole) plainGroundCount=0; else plainGroundCount++;
-        old.x=lastX; old.hole=hole; old.platform=null;
-        generateCoinSet(old);
-        tiles.push(old);
-    }
-
-    player.vy += 0.25; player.y += player.vy;
-    let onTile=false;
-    for(let tile of tiles){
-        const pxCenter=player.x+player.width/2;
-        if(!tile.hole && pxCenter>tile.x && pxCenter<tile.x+TILE_WIDTH && player.y+player.height>=BASE_HEIGHT-TILE_HEIGHT){
-            player.y = BASE_HEIGHT-TILE_HEIGHT-player.height;
-            player.vy=0; onTile=true;
-        }
-        if(tile.platform){
-            const p=tile.platform;
-            if(player.x+player.width>p.x && player.x<p.x+p.width &&
-               player.y+player.height>=p.y && player.y+player.height<=p.y+player.vy+0.5){
-                player.y=p.y-player.height; player.vy=0; onTile=true;
-            }
-        }
-        tile.coins = tile.coins.filter(c=>{
-            const hit = player.x+player.width>c.x && player.x<c.x+c.width &&
-                        player.y+player.height>c.y && player.y<c.y+c.height;
-            if(hit) score+=10;
-            return !hit;
-        });
-    }
-    player.onGround=onTile;
-
-    if(player.y>BASE_HEIGHT){ setTimeout(showGameOver, 50); return; }
-
-    ctx.fillStyle='red';
-    ctx.fillRect(player.x,player.y,player.width,player.height);
-
-    score+=0.1;
-    ctx.fillStyle='black';
-    ctx.font='16px sans-serif';
-    ctx.fillText("Score: "+Math.floor(score),10,20);
-
-    requestAnimationFrame(update);
-}
-</script>
+  <div class="section">
+    <p>自作ゲーム集↓</p>
+    <a href="games.html">ゲーム集</a>
+  </div>
 </body>
 </html>
+
+
+
